@@ -1,16 +1,19 @@
-import { Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { 
   Vpc, 
   SecurityGroup 
 } from 'aws-cdk-lib/aws-ec2';
+import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { 
   Cluster, 
   FargateService, 
   FargateTaskDefinition, 
   ContainerImage,
-  Protocol as EcsProtocol
+  Protocol as EcsProtocol,
+  LogDriver
 } from 'aws-cdk-lib/aws-ecs';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { 
   ApplicationLoadBalancer, 
   ApplicationProtocol,
@@ -24,6 +27,7 @@ interface FrontendStackProps extends StackProps {
 }
 
 export class FrontendStack extends Stack {
+  public readonly repository: Repository;
   public readonly alb: ApplicationLoadBalancer;
   public readonly frontendService: FargateService;
 
@@ -33,7 +37,16 @@ export class FrontendStack extends Stack {
     const { vpc, albSecurityGroup, frontendSecurityGroup } = props;
 
     // =========================
-    // 1. ECS クラスター
+    // 1. ECR リポジトリ
+    // =========================
+    this.repository = new Repository(this, 'FrontendRepository', {
+      repositoryName: 'frontend-app',
+      removalPolicy: RemovalPolicy.DESTROY,
+      emptyOnDelete: true,
+    });
+
+    // =========================
+    // 2. ECS クラスター
     // =========================
     const cluster = new Cluster(this, 'FrontendCluster', {
       vpc: vpc,
@@ -41,7 +54,7 @@ export class FrontendStack extends Stack {
     });
 
     // =========================
-    // 2. ALB (Application Load Balancer)
+    // 3. ALB (Application Load Balancer)
     // =========================
     this.alb = new ApplicationLoadBalancer(this, 'FrontendAlb', {
       vpc: vpc,
@@ -51,17 +64,27 @@ export class FrontendStack extends Stack {
     });
 
     // =========================
-    // 3. フロントエンド タスク定義
+    // 4. フロントエンド タスク定義
     // =========================
     const frontendTaskDef = new FargateTaskDefinition(this, 'FrontendTaskDef', {
       memoryLimitMiB: 512,
       cpu: 256,
     });
 
+    // CloudWatch Logs
+    const logGroup = new LogGroup(this, 'FrontendLogGroup', {
+      logGroupName: '/ecs/frontend-service',
+      retention: RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     const frontendContainer = frontendTaskDef.addContainer('FrontendContainer', {
-      image: ContainerImage.fromRegistry('nginx:alpine'),
+      image: ContainerImage.fromEcrRepository(this.repository, 'latest'),
       essential: true,
-      logging: undefined,
+      logging: LogDriver.awsLogs({
+        streamPrefix: 'frontend',
+        logGroup: logGroup,
+      }),
     });
 
     frontendContainer.addPortMappings({
@@ -70,7 +93,7 @@ export class FrontendStack extends Stack {
     });
 
     // =========================
-    // 4. フロントエンド ECS サービス
+    // 5. フロントエンド ECS サービス
     // =========================
     this.frontendService = new FargateService(this, 'FrontendService', {
       cluster: cluster,
@@ -84,7 +107,7 @@ export class FrontendStack extends Stack {
     });
 
     // =========================
-    // 5. ALB リスナーとターゲットグループ
+    // 6. ALB リスナーとターゲットグループ
     // =========================
     const listener = this.alb.addListener('FrontendListener', {
       port: 80,
@@ -102,8 +125,13 @@ export class FrontendStack extends Stack {
     });
 
     // =========================
-    // 6. Outputs
+    // 7. Outputs
     // =========================
+    new CfnOutput(this, 'RepositoryUri', {
+      value: this.repository.repositoryUri,
+      description: 'Frontend ECR Repository URI',
+    });
+
     new CfnOutput(this, 'FrontendURL', {
       value: `http://${this.alb.loadBalancerDnsName}`,
       description: 'Frontend Application URL',

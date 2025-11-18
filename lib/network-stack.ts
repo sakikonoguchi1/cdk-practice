@@ -12,6 +12,7 @@ import {
 export class NetworkStack extends Stack {
   public readonly vpc: Vpc;
   public readonly albSecurityGroup: SecurityGroup;
+  public readonly backendAlbSecurityGroup: SecurityGroup;
   public readonly frontendSecurityGroup: SecurityGroup;
   public readonly backendSecurityGroup: SecurityGroup;
 
@@ -66,6 +67,25 @@ export class NetworkStack extends Stack {
       'Allow HTTPS from anywhere'
     );
 
+    // バックエンドALB用セキュリティグループ
+    this.backendAlbSecurityGroup = new SecurityGroup(this, 'BackendAlbSecurityGroup', {
+      vpc: this.vpc,
+      description: 'Security group for backend ALB',
+      allowAllOutbound: true,
+    });
+
+    this.backendAlbSecurityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(80),
+      'Allow HTTP from anywhere'
+    );
+
+    this.backendAlbSecurityGroup.addIngressRule(
+      Peer.anyIpv4(),
+      Port.tcp(443),
+      'Allow HTTPS from anywhere'
+    );
+
     // フロントエンド用セキュリティグループ
     this.frontendSecurityGroup = new SecurityGroup(this, 'FrontendSecurityGroup', {
       vpc: this.vpc,
@@ -87,9 +107,9 @@ export class NetworkStack extends Stack {
     });
 
     this.backendSecurityGroup.addIngressRule(
-      this.frontendSecurityGroup,
+      this.backendAlbSecurityGroup,
       Port.tcp(3000),
-      'Allow traffic from frontend'
+      'Allow traffic from backend ALB'
     );
   }
 }

@@ -16,7 +16,7 @@ const env = {
 // 1. ネットワークスタック (VPC, セキュリティグループ)
 const networkStack = new NetworkStack(app, 'NetworkStack', { env });
 
-// 2. フロントエンドスタック (ECS + ALB)
+// 2. フロントエンドスタック (ECR + ECS + ALB)
 const frontendStack = new FrontendStack(app, 'FrontendStack', {
   env,
   vpc: networkStack.vpc,
@@ -28,6 +28,7 @@ const frontendStack = new FrontendStack(app, 'FrontendStack', {
 const backendStack = new BackendStack(app, 'BackendStack', {
   env,
   vpc: networkStack.vpc,
+  backendAlbSecurityGroup: networkStack.backendAlbSecurityGroup,
   backendSecurityGroup: networkStack.backendSecurityGroup,
 });
 
