@@ -24,6 +24,7 @@ interface FrontendStackProps extends StackProps {
   vpc: Vpc;
   albSecurityGroup: SecurityGroup;
   frontendSecurityGroup: SecurityGroup;
+  backendAlbDnsName?: string; // バックエンドALBのDNS名（オプショナル）
 }
 
 export class FrontendStack extends Stack {
@@ -38,6 +39,7 @@ export class FrontendStack extends Stack {
 
     // =========================
     // 1. ECR リポジトリ
+    // TODO:destroyすると中身も削除しちゃうので、削除されない方法調査する
     // =========================
     this.repository = new Repository(this, 'FrontendRepository', {
       repositoryName: 'frontend-app',
@@ -85,12 +87,19 @@ export class FrontendStack extends Stack {
         streamPrefix: 'frontend',
         logGroup: logGroup,
       }),
+      environment: props.backendAlbDnsName ? {
+        BACKEND_URL: props.backendAlbDnsName,
+      } : undefined,
     });
 
     frontendContainer.addPortMappings({
       containerPort: 80,
       protocol: EcsProtocol.TCP,
     });
+
+    // ECRリポジトリへのアクセス権限を付与（手動でイメージ更新する際に必要）
+    // コンテナ追加後にexecutionRoleが生成されるため、ここで権限付与
+    this.repository.grantPull(frontendTaskDef.executionRole!);
 
     // =========================
     // 5. フロントエンド ECS サービス

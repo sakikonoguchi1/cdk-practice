@@ -16,15 +16,7 @@ const env = {
 // 1. ネットワークスタック (VPC, セキュリティグループ)
 const networkStack = new NetworkStack(app, 'NetworkStack', { env });
 
-// 2. フロントエンドスタック (ECR + ECS + ALB)
-const frontendStack = new FrontendStack(app, 'FrontendStack', {
-  env,
-  vpc: networkStack.vpc,
-  albSecurityGroup: networkStack.albSecurityGroup,
-  frontendSecurityGroup: networkStack.frontendSecurityGroup,
-});
-
-// 3. バックエンドスタック (ECS)
+// 3. バックエンドスタック (ECS) - フロントエンドより先に作成
 const backendStack = new BackendStack(app, 'BackendStack', {
   env,
   vpc: networkStack.vpc,
@@ -32,9 +24,19 @@ const backendStack = new BackendStack(app, 'BackendStack', {
   backendSecurityGroup: networkStack.backendSecurityGroup,
 });
 
+// 2. フロントエンドスタック (ECR + ECS + ALB) - バックエンドALBのDNSを参照
+const frontendStack = new FrontendStack(app, 'FrontendStack', {
+  env,
+  vpc: networkStack.vpc,
+  albSecurityGroup: networkStack.albSecurityGroup,
+  frontendSecurityGroup: networkStack.frontendSecurityGroup,
+  backendAlbDnsName: backendStack.alb.loadBalancerDnsName,
+});
+
 // 4. ストレージスタック (S3 + CloudFront)
 const storageStack = new StorageStack(app, 'StorageStack', { env });
 
 // スタック依存関係の設定
-frontendStack.addDependency(networkStack);
 backendStack.addDependency(networkStack);
+frontendStack.addDependency(networkStack);
+frontendStack.addDependency(backendStack); // バックエンド完成後にフロントエンドをデプロイ

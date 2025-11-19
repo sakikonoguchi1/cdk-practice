@@ -74,17 +74,8 @@ export class NetworkStack extends Stack {
       allowAllOutbound: true,
     });
 
-    this.backendAlbSecurityGroup.addIngressRule(
-      Peer.anyIpv4(),
-      Port.tcp(80),
-      'Allow HTTP from anywhere'
-    );
-
-    this.backendAlbSecurityGroup.addIngressRule(
-      Peer.anyIpv4(),
-      Port.tcp(443),
-      'Allow HTTPS from anywhere'
-    );
+    // フロントエンドALBからのアクセスのみ許可（一般ユーザーからの直接アクセスをブロック）
+    // 注意: フロントエンドALBのセキュリティグループを後で参照するため、先にフロントエンドALB SGを作成する必要があります
 
     // フロントエンド用セキュリティグループ
     this.frontendSecurityGroup = new SecurityGroup(this, 'FrontendSecurityGroup', {
@@ -110,6 +101,14 @@ export class NetworkStack extends Stack {
       this.backendAlbSecurityGroup,
       Port.tcp(3000),
       'Allow traffic from backend ALB'
+    );
+
+    // バックエンドALBへのアクセスをフロントエンドALBのみに制限
+    // フロントエンドのECSタスク（Fargateコンテナ）がバックエンドALBにアクセスする
+    this.backendAlbSecurityGroup.addIngressRule(
+      this.frontendSecurityGroup,
+      Port.tcp(80),
+      'Allow HTTP from frontend ECS tasks only'
     );
   }
 }

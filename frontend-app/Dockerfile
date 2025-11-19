@@ -6,6 +6,10 @@ COPY index.html /usr/share/nginx/html/
 # nginx設定ファイルをコピー
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# entrypointスクリプトをコピー
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

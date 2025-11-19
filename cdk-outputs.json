@@ -1,0 +1,15 @@
+{
+  "NetworkStack": {
+    "ExportsOutputRefAppVpc80F1F7F93D0AA00C": "vpc-002e0c10d8cd8ab9c",
+    "ExportsOutputFnGetAttFrontendSecurityGroup69AD9D5BGroupId07DF996C": "sg-03a3e9a40a9157b8e",
+    "ExportsOutputRefAppVpcPrivateBESubnet2Subnet2B039950036D7AAC": "subnet-04b82ac1277965f06",
+    "ExportsOutputFnGetAttBackendAlbSecurityGroupCD822480GroupIdCD1FEA3D": "sg-00158a23843940591",
+    "ExportsOutputRefAppVpcPrivateFESubnet1SubnetF696F2BFC489142A": "subnet-05c9ddcb6218048bf",
+    "ExportsOutputRefAppVpcPrivateBESubnet1Subnet49EBCC55EEE9E972": "subnet-09ef24d0ad6bf77c7",
+    "ExportsOutputFnGetAttBackendSecurityGroup96CF32F1GroupId811D82AA": "sg-06f9fff86957ad6c6",
+    "ExportsOutputRefAppVpcPublicSubnet2SubnetDFE2ABB8EA76A10F": "subnet-0764bcd058dc7c1c0",
+    "ExportsOutputFnGetAttAlbSecurityGroup86A59E99GroupIdE3A37BC7": "sg-07d64a873346744e3",
+    "ExportsOutputRefAppVpcPrivateFESubnet2SubnetCBCB6AB542351895": "subnet-06ed47867eba26f75",
+    "ExportsOutputRefAppVpcPublicSubnet1SubnetDD9E0A0845FFF58F": "subnet-071930ff948f34944"
+  }
+}

@@ -178,19 +178,6 @@
         <h1>🚀 API テストアプリ</h1>
         <p class="subtitle">バックエンドAPIに接続してレスポンスを表示します</p>
         
-        <div class="input-group">
-            <label for="apiUrl">バックエンドAPIのURL</label>
-            <input 
-                type="text" 
-                id="apiUrl" 
-                placeholder="http://backend-alb-xxxxx.ap-northeast-1.elb.amazonaws.com" 
-                value=""
-            >
-            <small style="color: #888; margin-top: 5px; display: block;">
-                デプロイ後、BackendStackのOutputsから取得したBackendURLを入力してください
-            </small>
-        </div>
-        
         <button id="fetchBtn" onclick="fetchAPI()">
             📡 APIを呼び出す
         </button>
@@ -205,7 +192,6 @@
 
     <script>
         async function fetchAPI() {
-            const apiUrl = document.getElementById('apiUrl').value;
             const resultDiv = document.getElementById('result');
             const loadingDiv = document.getElementById('loading');
             const fetchBtn = document.getElementById('fetchBtn');
@@ -217,7 +203,8 @@
             
             try {
                 const startTime = performance.now();
-                const response = await fetch(apiUrl);
+                // /api/経由でバックエンドにアクセス（nginxがプロキシ）
+                const response = await fetch('/api/');
                 const endTime = performance.now();
                 const responseTime = (endTime - startTime).toFixed(2);
                 
@@ -248,12 +235,9 @@
             }
         }
         
-        // ページロード時に自動的にAPIを呼び出す（URLが設定されている場合のみ）
+        // ページロード時に自動的にAPIを呼び出す
         window.addEventListener('load', () => {
-            const apiUrl = document.getElementById('apiUrl').value;
-            if (apiUrl) {
-                fetchAPI();
-            }
+            fetchAPI();
         });
     </script>
 </body>
